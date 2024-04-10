@@ -20,6 +20,13 @@ const (
 )
 
 const (
+	// EncoderText is an Encoder of type text.
+	EncoderText Encoder = iota
+	// EncoderJson is an Encoder of type json.
+	EncoderJson
+)
+
+const (
 	// LevelDebug is a Level of type Debug.
 	LevelDebug Level = -1
 	// LevelInfo is a Level of type Info.
@@ -88,6 +95,71 @@ func (x Console) MarshalText() ([]byte, error) {
 // UnmarshalText implements the text unmarshaller method.
 func (x *Console) UnmarshalText(text []byte) error {
 	val, err := ParseConsole(string(text))
+	if err != nil {
+		return err
+	}
+	*x = val
+	return nil
+}
+
+var ErrInvalidEncoder = errors.New("not a valid Encoder")
+
+var _EncoderName = "textjson"
+
+var _EncoderMapName = map[Encoder]string{
+	EncoderText: _EncoderName[0:4],
+	EncoderJson: _EncoderName[4:8],
+}
+
+// Name is the attribute of Encoder.
+func (x Encoder) Name() string {
+	if v, ok := _EncoderMapName[x]; ok {
+		return v
+	}
+	return fmt.Sprintf("Encoder(%d).Name", x)
+}
+
+// Val is the attribute of Encoder.
+func (x Encoder) Val() int {
+	return int(x)
+}
+
+// IsValid provides a quick way to determine if the typed value is
+// part of the allowed enumerated values
+func (x Encoder) IsValid() bool {
+	_, ok := _EncoderMapName[x]
+	return ok
+}
+
+// String implements the Stringer interface.
+func (x Encoder) String() string {
+	return x.Name()
+}
+
+var _EncoderNameMap = map[string]Encoder{
+	_EncoderName[0:4]: EncoderText,
+	_EncoderName[4:8]: EncoderJson,
+}
+
+// ParseEncoder converts a string to an Encoder.
+func ParseEncoder(value string) (Encoder, error) {
+	if x, ok := _EncoderNameMap[value]; ok {
+		return x, nil
+	}
+	if x, ok := _EncoderNameMap[strings.ToLower(value)]; ok {
+		return x, nil
+	}
+	return Encoder(0), fmt.Errorf("%s is %w", value, ErrInvalidEncoder)
+}
+
+// MarshalText implements the text marshaller method.
+func (x Encoder) MarshalText() ([]byte, error) {
+	return []byte(x.String()), nil
+}
+
+// UnmarshalText implements the text unmarshaller method.
+func (x *Encoder) UnmarshalText(text []byte) error {
+	val, err := ParseEncoder(string(text))
 	if err != nil {
 		return err
 	}

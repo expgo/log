@@ -38,19 +38,47 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 	log, err := logs.GetOrLoad(typePath, func(k string) (any, error) {
 		l := &Logger[T]{}
 
+		ec := zapcore.EncoderConfig{
+			TimeKey:        "T",
+			LevelKey:       "L",
+			NameKey:        "N",
+			CallerKey:      "C",
+			FunctionKey:    zapcore.OmitKey,
+			MessageKey:     "M",
+			StacktraceKey:  "S",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000"),
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   zapcore.ShortCallerEncoder,
+		}
+
 		cores := []zapcore.Core{}
-		if cfg.Console != ConsoleNo {
-			consoleEncoder := zapcore.NewConsoleEncoder(zap.NewDevelopmentEncoderConfig())
+		logLevel := cfg.GetZapLevelByType(typePath)
+		if cfg.Console.Stream != ConsoleNo {
+
+			if cfg.Console.Encoder == EncoderText {
+				ec.EncodeLevel = zapcore.CapitalColorLevelEncoder
+			} else {
+				ec.EncodeLevel = zapcore.CapitalLevelEncoder
+			}
+
 			consoleWriter := zapcore.Lock(os.Stdout)
-			if cfg.Console == ConsoleStderr {
+			if cfg.Console.Stream == ConsoleStderr {
 				consoleWriter = zapcore.Lock(os.Stderr)
 			}
-			consoleCore := zapcore.NewCore(consoleEncoder, consoleWriter, cfg.GetZapLevelByType(typePath))
+
+			consoleEncoder := zapcore.NewConsoleEncoder(ec)
+			if cfg.Console.Encoder == EncoderJson {
+				consoleEncoder = zapcore.NewJSONEncoder(ec)
+			}
+
+			consoleCore := zapcore.NewCore(consoleEncoder, consoleWriter, logLevel)
 			cores = append(cores, consoleCore)
 		}
 
 		if len(cfg.File.Filename) > 0 {
-			fileEncoder := zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig())
+			ec.EncodeLevel = zapcore.CapitalLevelEncoder
+
 			fileWriter := zapcore.AddSync(&lumberjack.Logger{
 				Filename:   cfg.File.Filename,
 				MaxSize:    cfg.File.MaxSize,
@@ -59,7 +87,13 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 				LocalTime:  cfg.File.LocalTime,
 				Compress:   cfg.File.Compress,
 			})
-			fileCore := zapcore.NewCore(fileEncoder, fileWriter, cfg.GetZapLevelByType(typePath))
+
+			fileEncoder := zapcore.NewJSONEncoder(ec)
+			if cfg.File.Encoder == EncoderText {
+				fileEncoder = zapcore.NewConsoleEncoder(ec)
+			}
+
+			fileCore := zapcore.NewCore(fileEncoder, fileWriter, logLevel)
 			cores = append(cores, fileCore)
 		}
 
