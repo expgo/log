@@ -19,7 +19,7 @@ func TestLog(t *testing.T) {
 func TestLevel(t *testing.T) {
 	cfg, _ := config.New[Config]("")
 	cfg.Level["*Struct"] = LevelDebug
-	cfg.File.Filename = "app.log"
+	cfg.File.Filename = "log/app.log"
 
 	structLog, _ := NewWithConfig[MyLogStruct](cfg)
 	log := Log[MyLog]()
@@ -29,4 +29,18 @@ func TestLevel(t *testing.T) {
 
 	structLog.Info("info hello")
 	log.Info("info hello")
+}
+
+func TestLogRoll(t *testing.T) {
+	cfg, _ := config.New[Config]("")
+	cfg.Level["*Struct"] = LevelDebug
+	cfg.File.Filename = "log/roll.log"
+	cfg.File.MaxSize = 1
+	cfg.File.MaxBackups = 3
+	cfg.Console.Stream = ConsoleNo
+
+	logRoll, _ := NewWithConfig[MyLogStruct](cfg)
+	for i := 0; i < 100000; i++ {
+		logRoll.Info("log roll test,log roll test,log roll test,log roll test,log roll test,log roll test,log roll test,log roll test")
+	}
 }
