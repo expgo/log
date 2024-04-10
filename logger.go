@@ -14,79 +14,21 @@ const (
 )
 
 type Logger[T any] struct {
-	base *zap.Logger
+	base  *zap.Logger
+	level zap.AtomicLevel
 }
-
-// Named adds a sub-scope to the logger's name. See Logger.Named for details.
-//func (s *logger[T]) Named(name string) *Logger[T] {
-//	return &logger{base: s.base.Named(name)}
-//}
-
-// WithOptions clones the current Logger, applies the supplied Options,
-// and returns the result. It's safe to use concurrently.
-//func (s *logger[T]) WithOptions(opts ...zap.Option) *Logger[T] {
-//	base := s.base
-//	for _, opt := range opts {
-//		opt.apply(base)
-//	}
-//	return &logger[T]{base: base}
-//}
-
-// With adds a variadic number of fields to the logging context. It accepts a
-// mix of strongly-typed Field objects and loosely-typed key-value pairs. When
-// processing pairs, the first element of the pair is used as the field key
-// and the second as the field value.
-//
-// For example,
-//
-//	 sugaredLogger.With(
-//	   "hello", "world",
-//	   "failure", errors.New("oh no"),
-//	   Stack(),
-//	   "count", 42,
-//	   "user", User{Name: "alice"},
-//	)
-//
-// is the equivalent of
-//
-//	unsugared.With(
-//	  String("hello", "world"),
-//	  String("failure", "oh no"),
-//	  Stack(),
-//	  Int("count", 42),
-//	  Object("user", User{Name: "alice"}),
-//	)
-//
-// Note that the keys in key-value pairs should be strings. In development,
-// passing a non-string key panics. In production, the logger is more
-// forgiving: a separate error is logged, but the key-value pair is skipped
-// and execution continues. Passing an orphaned key triggers similar behavior:
-// panics in development and errors in production.
-//func (s *logger[T]) With(args ...interface{}) *Logger[T] {
-//	return &logger[T]{base: s.base.With(s.sweetenFields(args)...)}
-//}
-
-// WithLazy adds a variadic number of fields to the logging context lazily.
-// The fields are evaluated only if the logger is further chained with [With]
-// or is written to with any of the log level methods.
-// Until that occurs, the logger may retain references to objects inside the fields,
-// and logging will reflect the state of an object at the time of logging,
-// not the time of WithLazy().
-//
-// Similar to [With], fields added to the child don't affect the parent,
-// and vice versa. Also, the keys in key-value pairs should be strings. In development,
-// passing a non-string key panics, while in production it logs an error and skips the pair.
-// Passing an orphaned key has the same behavior.
-//func (s *logger[T]) WithLazy(args ...interface{}) *Logger[T] {
-//	return &logger[T]{base: s.base.WithLazy(s.sweetenFields(args)...)}
-//}
 
 // Level reports the minimum enabled level for this logger.
 //
 // For NopLoggers, this is [zapcore.InvalidLevel].
-//func (s *logger[T]) Level() zapcore.Level {
-//	return zapcore.LevelOf(s.base.core)
-//}
+func (s *Logger[T]) Level() zapcore.Level {
+	return s.base.Level()
+}
+
+// SetLevel set the log's level
+func (s *Logger[T]) SetLevel(level zapcore.Level) {
+	s.level.SetLevel(level)
+}
 
 // Log logs the provided arguments at provided level.
 // Spaces are added between arguments when neither is a string.

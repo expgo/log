@@ -37,6 +37,7 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 
 	log, err := logs.GetOrLoad(typePath, func(k string) (any, error) {
 		l := &Logger[T]{}
+		l.level = zap.NewAtomicLevel()
 
 		ec := zapcore.EncoderConfig{
 			TimeKey:        "T",
@@ -53,7 +54,8 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 		}
 
 		cores := []zapcore.Core{}
-		logLevel := cfg.GetZapLevelByType(typePath)
+		l.SetLevel(cfg.GetZapLevelByType(typePath))
+
 		if cfg.Console.Stream != ConsoleNo {
 
 			if cfg.Console.Encoder == EncoderText {
@@ -72,7 +74,7 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 				consoleEncoder = zapcore.NewJSONEncoder(ec)
 			}
 
-			consoleCore := zapcore.NewCore(consoleEncoder, consoleWriter, logLevel)
+			consoleCore := zapcore.NewCore(consoleEncoder, consoleWriter, &l.level)
 			cores = append(cores, consoleCore)
 		}
 
@@ -93,7 +95,7 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 				fileEncoder = zapcore.NewConsoleEncoder(ec)
 			}
 
-			fileCore := zapcore.NewCore(fileEncoder, fileWriter, logLevel)
+			fileCore := zapcore.NewCore(fileEncoder, fileWriter, &l.level)
 			cores = append(cores, fileCore)
 		}
 
