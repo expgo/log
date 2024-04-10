@@ -5,6 +5,8 @@ import (
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"sync"
+	"time"
 )
 
 const (
@@ -14,8 +16,15 @@ const (
 )
 
 type Logger[T any] struct {
-	base  *zap.Logger
-	level zap.AtomicLevel
+	base        *zap.Logger
+	level       zap.AtomicLevel
+	originLevel zapcore.Level
+	tempTimer   *time.Timer
+	timerLock   sync.Mutex
+}
+
+type ITemporarySetLevel interface {
+	TemporarySetLevel(level zapcore.Level, d time.Duration)
 }
 
 // Level reports the minimum enabled level for this logger.
@@ -28,6 +37,38 @@ func (s *Logger[T]) Level() zapcore.Level {
 // SetLevel set the log's level
 func (s *Logger[T]) SetLevel(level zapcore.Level) {
 	s.level.SetLevel(level)
+}
+
+func (s *Logger[T]) rollbackLevel() {
+	s.timerLock.Lock()
+	defer s.timerLock.Unlock()
+
+	if s.tempTimer != nil {
+		s.tempTimer.Stop()
+		s.tempTimer = nil
+	}
+
+	s.SetLevel(s.originLevel)
+}
+
+func (s *Logger[T]) TemporarySetLevel(level zapcore.Level, d time.Duration) {
+	s.timerLock.Lock()
+	defer s.timerLock.Unlock()
+
+	if s.tempTimer == nil {
+		s.originLevel = s.Level()
+	} else {
+		s.tempTimer.Stop()
+		s.tempTimer = nil
+	}
+
+	if d > 0 {
+		s.tempTimer = time.AfterFunc(d, func() {
+			s.rollbackLevel()
+		})
+	}
+
+	s.SetLevel(level)
 }
 
 // Log logs the provided arguments at provided level.

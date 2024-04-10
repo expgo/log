@@ -8,6 +8,10 @@ github.com/expgo/generic v0.0.0-20240323131353-339c0d4e5e11 h1:cWUgCuzaYf5WhAmgf
 github.com/expgo/generic v0.0.0-20240323131353-339c0d4e5e11/go.mod h1:Q3Y49UmlJcsKsmbWI6VA4+Z+N66PfJcSOPM+XC/N1y8=
 github.com/expgo/generic v0.0.0-20240409150052-f04fcb7e0fd5 h1:ZZbDh9Ma+dTNi8TDUxM7dB7BH25nXhQMnvUUGwgqZhs=
 github.com/expgo/generic v0.0.0-20240409150052-f04fcb7e0fd5/go.mod h1:Q3Y49UmlJcsKsmbWI6VA4+Z+N66PfJcSOPM+XC/N1y8=
+github.com/expgo/generic v0.0.0-20240410120232-b5c033510d14 h1:FlLhVCOQFP3OW7pCapFMNr9XO5ClAxvhO9quKKUsuoc=
+github.com/expgo/generic v0.0.0-20240410120232-b5c033510d14/go.mod h1:Q3Y49UmlJcsKsmbWI6VA4+Z+N66PfJcSOPM+XC/N1y8=
+github.com/expgo/generic v0.0.0-20240410123247-e162144797ca h1:/+jU23qxfKaI7NLQ+1Ut7wR7o2ccg4SYLGERnobFpo4=
+github.com/expgo/generic v0.0.0-20240410123247-e162144797ca/go.mod h1:Q3Y49UmlJcsKsmbWI6VA4+Z+N66PfJcSOPM+XC/N1y8=
 github.com/expgo/structure v0.0.0-20240330155600-da719deecafd h1:AwfQPc0VGnJldbnqvYjKnDMmQxxa9UVBXP79vG543yQ=
 github.com/expgo/structure v0.0.0-20240330155600-da719deecafd/go.mod h1:+TyxUwrs9+ZD9liPu7uO02NiWADfZs3zECNU/eWA2AM=
 github.com/expgo/structure v0.0.0-20240408070413-75d7f6febe00 h1:DeFvhh1mqRmI6diQxf6mEnnZsqlayd+t2Smxj3Khjrg=

@@ -4,11 +4,13 @@ import (
 	"github.com/expgo/config"
 	"github.com/expgo/factory"
 	"github.com/expgo/generic"
+	"github.com/gobwas/glob"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"reflect"
+	"time"
 )
 
 var logs generic.Cache[string, any]
@@ -129,4 +131,24 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 	}
 
 	return log.(*Logger[T]), nil
+}
+
+func SetLevel(logPathGlob string, level Level) {
+	TemporarySetLevel(logPathGlob, level, 0)
+}
+
+func TemporarySetLevel(logPath string, level Level, d time.Duration) {
+	logPathGlob := glob.MustCompile(logPath)
+	keys := logs.Keys()
+
+	for _, key := range keys {
+		if logPathGlob.Match(key) {
+			l, loaded := logs.Get(key)
+			if loaded {
+				if log, ok := l.(ITemporarySetLevel); ok {
+					log.TemporarySetLevel(level.ToZapLevel(), d)
+				}
+			}
+		}
+	}
 }
