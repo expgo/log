@@ -21,4 +21,7 @@ func TestLogWithWire(t *testing.T) {
 		myLog.WriteLog()
 		time.Sleep(1 * time.Second)
 	}
+
+	myLog1 := factory.New[MyLog1]()
+	myLog1.WriteLog()
 }

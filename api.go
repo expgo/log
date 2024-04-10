@@ -15,42 +15,86 @@ import (
 
 var logs generic.Cache[string, any]
 
-func must[T any](log *Logger[T], err error) *Logger[T] {
+func must[T any](log Logger[T], err error) Logger[T] {
 	if err != nil {
 		panic(err)
 	}
 	return log
 }
 
-func Log[T any]() *Logger[T] {
+type Logger[T any] interface {
+	Level() Level
+	SetLevel(lvl Level)
+	TemporarySetLevel(lvl Level, d time.Duration)
+
+	Log(lvl Level, args ...any)
+	Debug(args ...any)
+	Info(args ...any)
+	Warn(args ...any)
+	Error(args ...any)
+	Panic(args ...any)
+	Fatal(args ...any)
+
+	Logf(lvl Level, template string, args ...any)
+	Debugf(template string, args ...any)
+	Infof(template string, args ...any)
+	Warnf(template string, args ...any)
+	Errorf(template string, args ...any)
+	Panicf(template string, args ...any)
+	Fatalf(template string, args ...any)
+
+	Logw(lvl Level, msg string, keysAndValues ...any)
+	Debugw(msg string, keysAndValues ...any)
+	Infow(msg string, keysAndValues ...any)
+	Warnw(msg string, keysAndValues ...any)
+	Errorw(msg string, keysAndValues ...any)
+	Panicw(msg string, keysAndValues ...any)
+	Fatalw(msg string, keysAndValues ...any)
+}
+
+func Log[T any]() Logger[T] {
 	return must(New[T]())
 }
 
-func LogWithConfig[T any](cfg *Config) *Logger[T] {
+func LogWithPath[T any](path string) Logger[T] {
+	return must(NewWithPath[T](path))
+}
+
+func LogWithConfig[T any](cfg *Config) Logger[T] {
 	return must(NewWithConfig[T](cfg))
 }
 
 func Lazy[T any]() {
-	factory.Singleton[Logger[T]]().SetInitFunc(func() *Logger[T] {
+	factory.Interface[Logger[T]]().SetInitFunc(func() Logger[T] {
 		return Log[T]()
 	})
 }
 
+func LazyWithPath[T any](path string) {
+	factory.Interface[Logger[T]]().SetInitFunc(func() Logger[T] {
+		return LogWithPath[T](path)
+	})
+}
+
 func LasyWithConfig[T any](cfg *Config) {
-	factory.Singleton[Logger[T]]().SetInitFunc(func() *Logger[T] {
+	factory.Interface[Logger[T]]().SetInitFunc(func() Logger[T] {
 		return LogWithConfig[T](cfg)
 	})
 }
 
-func New[T any]() (*Logger[T], error) {
-	cfg, err := config.New[Config]("logging")
+func New[T any]() (Logger[T], error) {
+	return NewWithPath[T]("logging")
+}
+
+func NewWithPath[T any](path string) (Logger[T], error) {
+	cfg, err := config.New[Config](path)
 	if err != nil {
 		return nil, err
 	}
 	return NewWithConfig[T](cfg)
 }
 
-func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
+func NewWithConfig[T any](cfg *Config) (Logger[T], error) {
 	vt := reflect.TypeOf((*T)(nil)).Elem()
 	if vt.Kind() == reflect.Ptr {
 		vt = vt.Elem()
@@ -58,7 +102,7 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 	typePath := vt.PkgPath() + "/" + vt.Name()
 
 	log, err := logs.GetOrLoad(typePath, func(k string) (any, error) {
-		l := &Logger[T]{}
+		l := &logger[T]{}
 		l.level = zap.NewAtomicLevel()
 
 		ec := zapcore.EncoderConfig{
@@ -130,7 +174,7 @@ func NewWithConfig[T any](cfg *Config) (*Logger[T], error) {
 		return nil, err
 	}
 
-	return log.(*Logger[T]), nil
+	return log.(Logger[T]), nil
 }
 
 func SetLevel(logPathGlob string, level Level) {
@@ -146,7 +190,7 @@ func TemporarySetLevel(logPath string, level Level, d time.Duration) {
 			l, loaded := logs.Get(key)
 			if loaded {
 				if log, ok := l.(ITemporarySetLevel); ok {
-					log.TemporarySetLevel(level.ToZapLevel(), d)
+					log.TemporarySetLevel(level, d)
 				}
 			}
 		}

@@ -9,5 +9,6 @@ import (
 )
 
 func init() {
-	log.Lazy[MyLog]()
+	log.LazyWithPath[MyLog]("logging")
+	log.LazyWithPath[MyLog1]("log1")
 }

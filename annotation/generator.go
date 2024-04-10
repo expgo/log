@@ -27,7 +27,7 @@ func (g *Generator) WriteInitFunc(wr io.Writer) error {
 	buf.WriteString("func init() {\n")
 
 	for _, l := range g.logs {
-		buf.WriteString(fmt.Sprintf("log.Lazy[%s]()\n", l.typeName))
+		buf.WriteString(fmt.Sprintf(`log.LazyWithPath[%s]("%s")`, l.typeName, l.CfgPath) + "\n")
 	}
 
 	buf.WriteString("}\n")

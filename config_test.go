@@ -11,7 +11,7 @@ func TestStructChange(t *testing.T) {
 	c := factory.New[Config]()
 	log, err := structure.ConvertTo[*lumberjack.Logger](&c.File)
 	if err != nil {
-		t.Fatalf("Failed to convert FileLog to lumberjack.Logger: %v", err)
+		t.Fatalf("Failed to convert FileLog to lumberjack.logger: %v", err)
 	}
 	log.Close()
 }

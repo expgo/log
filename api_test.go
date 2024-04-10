@@ -10,7 +10,7 @@ type MyLogStruct struct {
 }
 
 type MyLog struct {
-	log *Logger[MyLog] `wire:"auto"`
+	log Logger[MyLog] `wire:"auto"`
 }
 
 func (m *MyLog) RunLog() {
@@ -58,18 +58,23 @@ func TestChangeLevel(t *testing.T) {
 	log := Log[MyLogStruct]()
 	log.Debug("debug hello 1")
 	log.Info("info hello 1")
+	log.Warn("warn hello 1")
 
-	log.SetLevel(LevelDebug.ToZapLevel())
+	log.SetLevel(LevelDebug)
 	log.Debug("debug hello 2")
 	log.Info("info hello 2")
+	log.Warn("warn hello 2")
 
-	log.SetLevel(LevelWarn.ToZapLevel())
+	log.SetLevel(LevelWarn)
 	log.Debug("debug hello 3")
 	log.Info("info hello 3")
+	log.Warn("warn hello 3")
 
-	log.SetLevel(LevelInfo.ToZapLevel())
+	log.SetLevel(LevelInfo)
 	log.Debug("debug hello 4")
 	log.Info("info hello 4")
+	log.Warn("warn hello 4")
+
 }
 
 func TestLogWire(t *testing.T) {

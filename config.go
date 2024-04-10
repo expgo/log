@@ -38,6 +38,7 @@ Level is an enum
 		DPanic
 		Panic
 		Fatal
+		Invalid
 	}
 */
 type Level int8
@@ -104,7 +105,7 @@ func (c *Config) Init() {
 	}
 }
 
-func (c *Config) GetZapLevelByType(typePath string) zapcore.Level {
+func (c *Config) GetZapLevelByType(typePath string) Level {
 	maxPath := ""
 	maxPathLevel := LevelInfo
 
@@ -117,5 +118,5 @@ func (c *Config) GetZapLevelByType(typePath string) zapcore.Level {
 		}
 	}
 
-	return maxPathLevel.ToZapLevel()
+	return maxPathLevel
 }

@@ -41,6 +41,8 @@ const (
 	LevelPanic Level = 4
 	// LevelFatal is a Level of type Fatal.
 	LevelFatal Level = 5
+	// LevelInvalid is a Level of type Invalid.
+	LevelInvalid Level = 6
 )
 
 var ErrInvalidConsole = errors.New("not a valid Console")
@@ -169,16 +171,17 @@ func (x *Encoder) UnmarshalText(text []byte) error {
 
 var ErrInvalidLevel = errors.New("not a valid Level")
 
-var _LevelName = "DebugInfoWarnErrorDPanicPanicFatal"
+var _LevelName = "DebugInfoWarnErrorDPanicPanicFatalInvalid"
 
 var _LevelMapName = map[Level]string{
-	LevelDebug:  _LevelName[0:5],
-	LevelInfo:   _LevelName[5:9],
-	LevelWarn:   _LevelName[9:13],
-	LevelError:  _LevelName[13:18],
-	LevelDpanic: _LevelName[18:24],
-	LevelPanic:  _LevelName[24:29],
-	LevelFatal:  _LevelName[29:34],
+	LevelDebug:   _LevelName[0:5],
+	LevelInfo:    _LevelName[5:9],
+	LevelWarn:    _LevelName[9:13],
+	LevelError:   _LevelName[13:18],
+	LevelDpanic:  _LevelName[18:24],
+	LevelPanic:   _LevelName[24:29],
+	LevelFatal:   _LevelName[29:34],
+	LevelInvalid: _LevelName[34:41],
 }
 
 // Name is the attribute of Level.
@@ -224,6 +227,8 @@ var _LevelNameMap = map[string]Level{
 	strings.ToLower(_LevelName[24:29]): LevelPanic,
 	_LevelName[29:34]:                  LevelFatal,
 	strings.ToLower(_LevelName[29:34]): LevelFatal,
+	_LevelName[34:41]:                  LevelInvalid,
+	strings.ToLower(_LevelName[34:41]): LevelInvalid,
 }
 
 // ParseLevel converts a string to a Level.
