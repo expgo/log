@@ -2,6 +2,7 @@ package log
 
 import (
 	"github.com/expgo/config"
+	"github.com/expgo/factory"
 	"testing"
 )
 
@@ -9,6 +10,14 @@ type MyLogStruct struct {
 }
 
 type MyLog struct {
+	log *Logger[MyLog] `wire:"auto"`
+}
+
+func (m *MyLog) RunLog() {
+	m.log.Debug("debug")
+	m.log.Info("info")
+	m.log.Warn("warn")
+	m.log.Error("error")
 }
 
 func TestLog(t *testing.T) {
@@ -61,4 +70,12 @@ func TestChangeLevel(t *testing.T) {
 	log.SetLevel(LevelInfo.ToZapLevel())
 	log.Debug("debug hello 4")
 	log.Info("info hello 4")
+}
+
+func TestLogWire(t *testing.T) {
+	Lazy[MyLog]()
+
+	myLog := factory.New[MyLog]()
+
+	myLog.RunLog()
 }

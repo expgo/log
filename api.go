@@ -2,6 +2,7 @@ package log
 
 import (
 	"github.com/expgo/config"
+	"github.com/expgo/factory"
 	"github.com/expgo/generic"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -25,6 +26,18 @@ func Log[T any]() *Logger[T] {
 
 func LogWithConfig[T any](cfg *Config) *Logger[T] {
 	return must(NewWithConfig[T](cfg))
+}
+
+func Lazy[T any]() {
+	factory.Singleton[Logger[T]]().SetInitFunc(func() *Logger[T] {
+		return Log[T]()
+	})
+}
+
+func LasyWithConfig[T any](cfg *Config) {
+	factory.Singleton[Logger[T]]().SetInitFunc(func() *Logger[T] {
+		return LogWithConfig[T](cfg)
+	})
 }
 
 func New[T any]() (*Logger[T], error) {
