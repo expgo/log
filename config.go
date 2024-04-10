@@ -1,6 +1,9 @@
 package log
 
-import "go.uber.org/zap/zapcore"
+import (
+	"github.com/gobwas/glob"
+	"go.uber.org/zap/zapcore"
+)
 
 type LogFile struct {
 	// Filename is the file to write logs to.  Backup log files will be retained
@@ -69,11 +72,33 @@ func (l Level) ToZapLevel() zapcore.Level {
 type Config struct {
 	Level map[string]Level
 	// Console is output to
-	Console Console `value:"no"`
+	Console Console `yaml:"console" value:"stdout"`
 	File    LogFile
 }
 
 func (c *Config) Init() {
-	c.Level = make(map[string]Level)
-	c.Level["*"] = LevelInfo
+	if c.Level == nil {
+		c.Level = make(map[string]Level)
+	}
+
+	// set default * to Info Level
+	if _, ok := c.Level["*"]; !ok {
+		c.Level["*"] = LevelInfo
+	}
+}
+
+func (c *Config) GetZapLevelByType(typePath string) zapcore.Level {
+	maxPath := ""
+	maxPathLevel := LevelInfo
+
+	for k, v := range c.Level {
+		if glob.MustCompile(k).Match(typePath) {
+			if len(maxPath) < len(k) {
+				maxPath = k
+				maxPathLevel = v
+			}
+		}
+	}
+
+	return maxPathLevel.ToZapLevel()
 }

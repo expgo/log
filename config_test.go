@@ -13,5 +13,5 @@ func TestStructChange(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to convert LogFile to lumberjack.Logger: %v", err)
 	}
-	t.Log(log.Compress)
+	log.Close()
 }
