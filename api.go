@@ -12,12 +12,19 @@ import (
 
 var logs generic.Cache[string, any]
 
-func Log[T any]() *Logger[T] {
-	log, err := New[T]()
+func must[T any](log *Logger[T], err error) *Logger[T] {
 	if err != nil {
 		panic(err)
 	}
 	return log
+}
+
+func Log[T any]() *Logger[T] {
+	return must(New[T]())
+}
+
+func LogWithConfig[T any](cfg *Config) *Logger[T] {
+	return must(NewWithConfig[T](cfg))
 }
 
 func New[T any]() (*Logger[T], error) {
