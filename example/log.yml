@@ -1,0 +1,18 @@
+logging:
+  level:
+    "*MyLog": warn
+  console:
+    stream: stderr
+  file:
+    filename: log/a.log
+    encoder: text
+    maxage: 3
+
+log1:
+  level:
+    "*MyLog1": debug
+  console:
+    stream: stdout
+    encoder: json
+  file:
+    filename: log/b.log

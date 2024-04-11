@@ -1,6 +1,7 @@
 package example
 
 import (
+	"github.com/expgo/config"
 	"github.com/expgo/factory"
 	"github.com/expgo/log"
 	"testing"
@@ -8,6 +9,8 @@ import (
 )
 
 func TestLogWithWire(t *testing.T) {
+	config.SetDefaultFilename("log.yml")
+
 	myLog := factory.New[MyLog]()
 	myLog.WriteLog()
 
