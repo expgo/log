@@ -180,6 +180,15 @@ func (l *logger) TemporarySetLevel(level Level, d time.Duration) {
 	l.SetLevel(level)
 }
 
+func (l *logger) AddHook(f func(level Level, t time.Time, name string, msg string)) {
+	l.init()
+
+	l.base = l.base.WithOptions(zap.Hooks(func(entry zapcore.Entry) error {
+		f(Level(entry.Level), entry.Time, entry.LoggerName, entry.Message)
+		return nil
+	}))
+}
+
 // Log logs the provided arguments at provided level.
 // Spaces are added between arguments when neither is a string.
 func (l *logger) Log(lvl Level, args ...interface{}) {

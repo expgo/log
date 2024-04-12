@@ -22,6 +22,7 @@ type Logger interface {
 	Level() Level
 	SetLevel(lvl Level)
 	TemporarySetLevel(lvl Level, d time.Duration)
+	AddHook(func(level Level, t time.Time, name string, msg string))
 
 	Log(lvl Level, args ...any)
 	Debug(args ...any)
