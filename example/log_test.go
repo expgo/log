@@ -28,5 +28,8 @@ func TestLogWithWire(t *testing.T) {
 	myLog1 := factory.New[MyLog1]()
 	myLog1.WriteLog()
 
-	logger.Error("123")
+	logger.Debug("debug 123")
+	logger.Info("info 123")
+	logger.Warn("warn 123")
+	logger.Error("err 123")
 }

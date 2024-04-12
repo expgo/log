@@ -2,9 +2,12 @@ package log
 
 import (
 	"fmt"
+	"github.com/expgo/config"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
+	"os"
 	"sync"
 	"time"
 )
@@ -21,20 +24,118 @@ type logger struct {
 	originLevel Level
 	tempTimer   *time.Timer
 	timerLock   sync.Mutex
+
+	typePath string
+	cfgPath  string
+	cfg      *Config
+	once     sync.Once
 }
 
 type ITemporarySetLevel interface {
 	TemporarySetLevel(level Level, d time.Duration)
 }
 
-func (l *logger) WithOptions(opts ...zap.Option) {
-	l.base = l.base.WithOptions(opts...)
+func fullCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(fmt.Sprintf("[%s]", caller.Function) + caller.TrimmedPath())
+}
+
+func (l *logger) init() {
+	l.once.Do(func() {
+		if l.cfg == nil {
+			if len(l.cfgPath) == 0 {
+				panic("cfgPath or cfg must set one")
+			}
+
+			cfg, err := config.New[Config](l.cfgPath)
+			if err != nil {
+				panic(err)
+			}
+
+			l.cfg = cfg
+		}
+
+		cfg := l.cfg
+		l.level = zap.NewAtomicLevelAt(cfg.GetZapLevelByType(l.typePath).ToZapLevel())
+
+		ec := zapcore.EncoderConfig{
+			TimeKey:        "time",
+			LevelKey:       "level",
+			NameKey:        "logger",
+			CallerKey:      "caller",
+			FunctionKey:    zapcore.OmitKey,
+			MessageKey:     "msg",
+			StacktraceKey:  "stack",
+			LineEnding:     zapcore.DefaultLineEnding,
+			EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000"),
+			EncodeDuration: zapcore.StringDurationEncoder,
+			EncodeCaller:   fullCallerEncoder,
+		}
+
+		cores := []zapcore.Core{}
+
+		if cfg.Console.Stream != ConsoleNo {
+
+			if cfg.Console.Encoder == EncoderText {
+				ec.EncodeLevel = zapcore.LowercaseColorLevelEncoder
+			} else {
+				ec.EncodeLevel = zapcore.LowercaseLevelEncoder
+			}
+
+			consoleWriter := zapcore.Lock(os.Stdout)
+			if cfg.Console.Stream == ConsoleStderr {
+				consoleWriter = zapcore.Lock(os.Stderr)
+			}
+
+			consoleEncoder := zapcore.NewConsoleEncoder(ec)
+			if cfg.Console.Encoder == EncoderJson {
+				consoleEncoder = zapcore.NewJSONEncoder(ec)
+			}
+
+			consoleCore := zapcore.NewCore(consoleEncoder, consoleWriter, &l.level)
+			cores = append(cores, consoleCore)
+		}
+
+		if len(cfg.File.Filename) > 0 {
+			ec.EncodeLevel = zapcore.LowercaseLevelEncoder
+
+			fileWriter := zapcore.AddSync(&lumberjack.Logger{
+				Filename:   cfg.File.Filename,
+				MaxSize:    cfg.File.MaxSize,
+				MaxAge:     cfg.File.MaxAge,
+				MaxBackups: cfg.File.MaxBackups,
+				LocalTime:  cfg.File.LocalTime,
+				Compress:   cfg.File.Compress,
+			})
+
+			fileEncoder := zapcore.NewJSONEncoder(ec)
+			if cfg.File.Encoder == EncoderText {
+				fileEncoder = zapcore.NewConsoleEncoder(ec)
+			}
+
+			fileCore := zapcore.NewCore(fileEncoder, fileWriter, &l.level)
+			cores = append(cores, fileCore)
+		}
+
+		l.base = zap.New(zapcore.NewTee(cores...))
+
+		name := cfg.GetName(l.typePath)
+		if len(name) > 0 {
+			l.base = l.base.Named(name)
+		}
+
+		options := []zap.Option{}
+		options = append(options, zap.AddCallerSkip(2))
+		options = append(options, zap.WithCaller(cfg.WithCaller))
+
+		l.base = l.base.WithOptions(options...)
+	})
 }
 
 // Level reports the minimum enabled level for this logger.
 func (l *logger) Level() Level {
-	lvl := l.base.Level()
-	result := Level(lvl)
+	l.init()
+
+	result := Level(l.level.Level())
 	if result.IsValid() {
 		return result
 	} else {
@@ -281,11 +382,13 @@ func (l *logger) Fatalln(args ...interface{}) {
 
 // Sync flushes any buffered log entries.
 func (l *logger) Sync() error {
+	l.init()
 	return l.base.Sync()
 }
 
 // log message with Sprint, Sprintf, or neither.
 func (l *logger) log(lvl zapcore.Level, template string, fmtArgs []interface{}, context []interface{}) {
+	l.init()
 	// If logging at this level is completely disabled, skip the overhead of
 	// string formatting.
 	if lvl < zap.DPanicLevel && !l.base.Core().Enabled(lvl) {
@@ -300,6 +403,7 @@ func (l *logger) log(lvl zapcore.Level, template string, fmtArgs []interface{}, 
 
 // logln message with Sprintln
 func (l *logger) logln(lvl zapcore.Level, fmtArgs []interface{}, context []interface{}) {
+	l.init()
 	if lvl < zap.DPanicLevel && !l.base.Core().Enabled(lvl) {
 		return
 	}

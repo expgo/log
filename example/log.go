@@ -17,7 +17,7 @@ func (ml *MyLog) WriteLog() {
 }
 
 type MyLog1 struct {
-	log log.Logger `new:""`
+	log log.Logger `new:"self,value:log1"`
 }
 
 func (ml *MyLog1) WriteLog() {

@@ -100,11 +100,11 @@ type ConsoleLog struct {
 }
 
 type Config struct {
-	Level      map[string]Level
-	Console    ConsoleLog
-	File       FileLog
-	WithCaller bool `value:"true"`
-	WithName   Name `value:"short"`
+	Level       map[string]Level
+	Console     ConsoleLog
+	File        FileLog
+	WithCaller  bool `value:"true"`
+	WithLogName Name `value:"short"`
 }
 
 func (c *Config) Init() {
@@ -134,7 +134,7 @@ func (c *Config) GetZapLevelByType(typePath string) Level {
 }
 
 func (c *Config) GetName(typePath string) string {
-	switch c.WithName {
+	switch c.WithLogName {
 	case NameNo:
 		return ""
 	case NameShort:
