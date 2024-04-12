@@ -2,11 +2,11 @@ package example
 
 import "github.com/expgo/log"
 
-//go:generate ag --dev-plugin=github.com/expgo/log/annotation --dev-plugin-dir=../
-
 // @Log
+//go:generate ag --dev-plugin=github.com/expgo/log/annotation
+
 type MyLog struct {
-	log log.Logger[MyLog] `wire:"auto"`
+	log log.Logger `new:""`
 }
 
 func (ml *MyLog) WriteLog() {
@@ -16,9 +16,8 @@ func (ml *MyLog) WriteLog() {
 	ml.log.Error("error")
 }
 
-// @Log(cfgPath="log1")
 type MyLog1 struct {
-	log log.Logger[MyLog1] `wire:"auto"`
+	log log.Logger `new:""`
 }
 
 func (ml *MyLog1) WriteLog() {

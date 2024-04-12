@@ -1,8 +1,8 @@
 package log
 
 import (
+	"fmt"
 	"github.com/expgo/config"
-	"github.com/expgo/factory"
 	"github.com/expgo/generic"
 	"github.com/gobwas/glob"
 	"go.uber.org/zap"
@@ -15,14 +15,16 @@ import (
 
 var logs generic.Cache[string, any]
 
-func must[T any](log Logger[T], err error) Logger[T] {
+const DefaultConfigPath = "logging"
+
+func Must(log Logger, err error) Logger {
 	if err != nil {
 		panic(err)
 	}
 	return log
 }
 
-type Logger[T any] interface {
+type Logger interface {
 	Level() Level
 	SetLevel(lvl Level)
 	TemporarySetLevel(lvl Level, d time.Duration)
@@ -52,71 +54,81 @@ type Logger[T any] interface {
 	Fatalw(msg string, keysAndValues ...any)
 }
 
-func Log[T any]() Logger[T] {
-	return must(New[T]())
+func Log[T any]() Logger {
+	return LogWithConfigPath[T](DefaultConfigPath)
 }
 
-func LogWithPath[T any](path string) Logger[T] {
-	return must(NewWithPath[T](path))
+func LogWithConfigPath[T any](cfgPath string) Logger {
+	return Must(NewWithConfigPath(new(T), cfgPath))
 }
 
-func LogWithConfig[T any](cfg *Config) Logger[T] {
-	return must(NewWithConfig[T](cfg))
-}
-
-func Lazy[T any]() {
-	factory.Interface[Logger[T]]().SetInitFunc(func() Logger[T] {
-		return Log[T]()
-	})
-}
-
-func LazyWithPath[T any](path string) {
-	factory.Interface[Logger[T]]().SetInitFunc(func() Logger[T] {
-		return LogWithPath[T](path)
-	})
-}
-
-func LasyWithConfig[T any](cfg *Config) {
-	factory.Interface[Logger[T]]().SetInitFunc(func() Logger[T] {
-		return LogWithConfig[T](cfg)
-	})
-}
-
-func New[T any]() (Logger[T], error) {
-	return NewWithPath[T]("logging")
-}
-
-func NewWithPath[T any](path string) (Logger[T], error) {
-	cfg, err := config.New[Config](path)
-	if err != nil {
-		return nil, err
-	}
-	return NewWithConfig[T](cfg)
-}
-
-func NewWithConfig[T any](cfg *Config) (Logger[T], error) {
-	vt := reflect.TypeOf((*T)(nil)).Elem()
+func LogWithConfig[T any](cfg *Config) Logger {
+	vt := reflect.TypeOf((*T)(nil))
 	if vt.Kind() == reflect.Ptr {
 		vt = vt.Elem()
 	}
-	typePath := vt.PkgPath() + "/" + vt.Name()
+	typePath := vt.PkgPath() + "." + vt.Name()
 
+	return Must(NewWithTypePathAndConfig(typePath, cfg))
+}
+
+func New(t any) (Logger, error) {
+	return NewWithConfigPath(t, DefaultConfigPath)
+}
+
+func NewWithConfigPath(t any, cfgPath string) (Logger, error) {
+	cfg, err := config.New[Config](cfgPath)
+	if err != nil {
+		return nil, err
+	}
+
+	vt := reflect.TypeOf(t)
+	if vt.Kind() == reflect.Ptr {
+		vt = vt.Elem()
+	}
+	typePath := vt.PkgPath() + "." + vt.Name()
+
+	return NewWithTypePathAndConfig(typePath, cfg)
+}
+
+// @Factory(params={self, "value:logging"})
+func FactoryWithConfigPath(t any, cfgPath string) Logger {
+	return Must(NewWithConfigPath(t, cfgPath))
+}
+
+func FactoryWithTypePathAndConfigPath(typePath string, cfgPath string) Logger {
+	return Must(NewWithTypePathAndConfigPath(typePath, cfgPath))
+}
+
+func NewWithTypePathAndConfigPath(typePath string, cfgPath string) (Logger, error) {
+	cfg, err := config.New[Config](cfgPath)
+	if err != nil {
+		return nil, err
+	}
+	return NewWithTypePathAndConfig(typePath, cfg)
+}
+
+func FullCallerEncoder(caller zapcore.EntryCaller, enc zapcore.PrimitiveArrayEncoder) {
+	enc.AppendString(fmt.Sprintf("[%s]", caller.Function) + caller.TrimmedPath())
+}
+
+func NewWithTypePathAndConfig(typePath string, cfg *Config) (Logger, error) {
 	log, err := logs.GetOrLoad(typePath, func(k string) (any, error) {
-		l := &logger[T]{}
+		l := &logger{}
 		l.level = zap.NewAtomicLevel()
 
 		ec := zapcore.EncoderConfig{
-			TimeKey:        "T",
-			LevelKey:       "L",
-			NameKey:        "N",
-			CallerKey:      "C",
+			TimeKey:        "time",
+			LevelKey:       "level",
+			NameKey:        "logger",
+			CallerKey:      "caller",
 			FunctionKey:    zapcore.OmitKey,
-			MessageKey:     "M",
-			StacktraceKey:  "S",
+			MessageKey:     "msg",
+			StacktraceKey:  "stack",
 			LineEnding:     zapcore.DefaultLineEnding,
 			EncodeTime:     zapcore.TimeEncoderOfLayout("2006-01-02T15:04:05.000000"),
 			EncodeDuration: zapcore.StringDurationEncoder,
-			EncodeCaller:   zapcore.ShortCallerEncoder,
+			EncodeCaller:   FullCallerEncoder,
 		}
 
 		cores := []zapcore.Core{}
@@ -125,9 +137,9 @@ func NewWithConfig[T any](cfg *Config) (Logger[T], error) {
 		if cfg.Console.Stream != ConsoleNo {
 
 			if cfg.Console.Encoder == EncoderText {
-				ec.EncodeLevel = zapcore.CapitalColorLevelEncoder
+				ec.EncodeLevel = zapcore.LowercaseColorLevelEncoder
 			} else {
-				ec.EncodeLevel = zapcore.CapitalLevelEncoder
+				ec.EncodeLevel = zapcore.LowercaseLevelEncoder
 			}
 
 			consoleWriter := zapcore.Lock(os.Stdout)
@@ -145,7 +157,7 @@ func NewWithConfig[T any](cfg *Config) (Logger[T], error) {
 		}
 
 		if len(cfg.File.Filename) > 0 {
-			ec.EncodeLevel = zapcore.CapitalLevelEncoder
+			ec.EncodeLevel = zapcore.LowercaseLevelEncoder
 
 			fileWriter := zapcore.AddSync(&lumberjack.Logger{
 				Filename:   cfg.File.Filename,
@@ -165,7 +177,18 @@ func NewWithConfig[T any](cfg *Config) (Logger[T], error) {
 			cores = append(cores, fileCore)
 		}
 
-		l.base = zap.New(zapcore.NewTee(cores...)).Named(k)
+		l.base = zap.New(zapcore.NewTee(cores...))
+
+		name := cfg.GetName(typePath)
+		if len(name) > 0 {
+			l.base = l.base.Named(name)
+		}
+
+		options := []zap.Option{}
+		options = append(options, zap.AddCallerSkip(2))
+		options = append(options, zap.WithCaller(cfg.WithCaller))
+
+		l.WithOptions(options...)
 
 		return l, nil
 	})
@@ -174,7 +197,7 @@ func NewWithConfig[T any](cfg *Config) (Logger[T], error) {
 		return nil, err
 	}
 
-	return log.(Logger[T]), nil
+	return log.(Logger), nil
 }
 
 func SetLevel(logPathGlob string, level Level) {

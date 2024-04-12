@@ -10,7 +10,7 @@ type MyLogStruct struct {
 }
 
 type MyLog struct {
-	log Logger[MyLog] `wire:"auto"`
+	log Logger `new:""`
 }
 
 func (m *MyLog) RunLog() {
@@ -30,7 +30,7 @@ func TestLevel(t *testing.T) {
 	cfg.Level["*Struct"] = LevelDebug
 	cfg.File.Filename = "log/app.log"
 
-	structLog, _ := NewWithConfig[MyLogStruct](cfg)
+	structLog := LogWithConfig[MyLogStruct](cfg)
 	log := Log[MyLog]()
 
 	structLog.Debug("debug hello")
@@ -48,7 +48,7 @@ func TestLogRoll(t *testing.T) {
 	cfg.File.MaxBackups = 3
 	cfg.Console.Stream = ConsoleNo
 
-	logRoll, _ := NewWithConfig[MyLogStruct](cfg)
+	logRoll := LogWithConfig[MyLogStruct](cfg)
 	for i := 0; i < 100000; i++ {
 		logRoll.Info("log roll test,log roll test,log roll test,log roll test,log roll test,log roll test,log roll test,log roll test")
 	}
@@ -78,9 +78,6 @@ func TestChangeLevel(t *testing.T) {
 }
 
 func TestLogWire(t *testing.T) {
-	Lazy[MyLog]()
-
 	myLog := factory.New[MyLog]()
-
 	myLog.RunLog()
 }

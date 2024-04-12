@@ -8,7 +8,6 @@ import (
 	"github.com/expgo/log"
 )
 
-func init() {
-	log.LazyWithPath[MyLog]("logging")
-	log.LazyWithPath[MyLog1]("log1")
-}
+var (
+	logger = log.FactoryWithTypePathAndConfigPath("github.com/expgo/log/example", "logging")
+)

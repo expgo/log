@@ -3,6 +3,7 @@ package log
 import (
 	"github.com/gobwas/glob"
 	"go.uber.org/zap/zapcore"
+	"path/filepath"
 )
 
 /*
@@ -25,6 +26,17 @@ Console is en enum
 	}
 */
 type Console string
+
+/*
+Name is en enum
+
+	@Enum {
+		no       // no name
+		short    // with short path
+		full   // with full path
+	}
+*/
+type Name string
 
 /*
 Level is an enum
@@ -88,10 +100,11 @@ type ConsoleLog struct {
 }
 
 type Config struct {
-	Level map[string]Level
-	// Console is output to
-	Console ConsoleLog
-	File    FileLog
+	Level      map[string]Level
+	Console    ConsoleLog
+	File       FileLog
+	WithCaller bool `value:"true"`
+	WithName   Name `value:"short"`
 }
 
 func (c *Config) Init() {
@@ -99,7 +112,6 @@ func (c *Config) Init() {
 		c.Level = make(map[string]Level)
 	}
 
-	// set default * to Info Level
 	if _, ok := c.Level["*"]; !ok {
 		c.Level["*"] = LevelInfo
 	}
@@ -119,4 +131,15 @@ func (c *Config) GetZapLevelByType(typePath string) Level {
 	}
 
 	return maxPathLevel
+}
+
+func (c *Config) GetName(typePath string) string {
+	switch c.WithName {
+	case NameNo:
+		return ""
+	case NameShort:
+		return filepath.Base(typePath)
+	default:
+		return typePath
+	}
 }

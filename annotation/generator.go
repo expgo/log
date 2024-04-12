@@ -18,22 +18,22 @@ func (g *Generator) GetImports() []string {
 }
 
 func (g *Generator) WriteConst(wr io.Writer) error {
-	return nil
-}
-
-func (g *Generator) WriteInitFunc(wr io.Writer) error {
 	buf := bytes.NewBuffer([]byte{})
 
-	buf.WriteString("func init() {\n")
+	buf.WriteString("var (\n")
 
 	for _, l := range g.logs {
-		buf.WriteString(fmt.Sprintf(`log.LazyWithPath[%s]("%s")`, l.typeName, l.CfgPath) + "\n")
+		buf.WriteString(fmt.Sprintf(`%s = log.FactoryWithTypePathAndConfigPath("%s", "%s")`, l.Name, l.typePath, l.CfgPath) + "\n")
 	}
 
-	buf.WriteString("}\n")
+	buf.WriteString(")\n")
 
 	_, err := io.Copy(wr, buf)
 	return err
+}
+
+func (g *Generator) WriteInitFunc(wr io.Writer) error {
+	return nil
 }
 
 func (g *Generator) WriteBody(wr io.Writer) error {
@@ -41,6 +41,6 @@ func (g *Generator) WriteBody(wr io.Writer) error {
 }
 
 func newGenerator(logs []*Log) (api.Generator, error) {
-	sorted := stream.Must(stream.Of(logs).Sort(func(x, y *Log) int { return strings.Compare(x.typeName, y.typeName) }).ToSlice())
+	sorted := stream.Must(stream.Of(logs).Sort(func(x, y *Log) int { return strings.Compare(x.Name, y.Name) }).ToSlice())
 	return &Generator{sorted}, nil
 }

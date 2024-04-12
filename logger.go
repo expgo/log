@@ -15,7 +15,7 @@ const (
 	_multipleErrMsg     = "Multiple errors without a key."
 )
 
-type logger[T any] struct {
+type logger struct {
 	base        *zap.Logger
 	level       zap.AtomicLevel
 	originLevel Level
@@ -27,9 +27,13 @@ type ITemporarySetLevel interface {
 	TemporarySetLevel(level Level, d time.Duration)
 }
 
+func (l *logger) WithOptions(opts ...zap.Option) {
+	l.base = l.base.WithOptions(opts...)
+}
+
 // Level reports the minimum enabled level for this logger.
-func (s *logger[T]) Level() Level {
-	lvl := s.base.Level()
+func (l *logger) Level() Level {
+	lvl := l.base.Level()
 	result := Level(lvl)
 	if result.IsValid() {
 		return result
@@ -39,144 +43,144 @@ func (s *logger[T]) Level() Level {
 }
 
 // SetLevel set the log's level
-func (s *logger[T]) SetLevel(level Level) {
-	s.level.SetLevel(level.ToZapLevel())
+func (l *logger) SetLevel(level Level) {
+	l.level.SetLevel(level.ToZapLevel())
 }
 
-func (s *logger[T]) rollbackLevel() {
-	s.timerLock.Lock()
-	defer s.timerLock.Unlock()
+func (l *logger) rollbackLevel() {
+	l.timerLock.Lock()
+	defer l.timerLock.Unlock()
 
-	if s.tempTimer != nil {
-		s.tempTimer.Stop()
-		s.tempTimer = nil
+	if l.tempTimer != nil {
+		l.tempTimer.Stop()
+		l.tempTimer = nil
 	}
 
-	s.SetLevel(s.originLevel)
+	l.SetLevel(l.originLevel)
 }
 
-func (s *logger[T]) TemporarySetLevel(level Level, d time.Duration) {
-	s.timerLock.Lock()
-	defer s.timerLock.Unlock()
+func (l *logger) TemporarySetLevel(level Level, d time.Duration) {
+	l.timerLock.Lock()
+	defer l.timerLock.Unlock()
 
-	if s.tempTimer == nil {
-		s.originLevel = s.Level()
+	if l.tempTimer == nil {
+		l.originLevel = l.Level()
 	} else {
-		s.tempTimer.Stop()
-		s.tempTimer = nil
+		l.tempTimer.Stop()
+		l.tempTimer = nil
 	}
 
 	if d > 0 {
-		s.tempTimer = time.AfterFunc(d, func() {
-			s.rollbackLevel()
+		l.tempTimer = time.AfterFunc(d, func() {
+			l.rollbackLevel()
 		})
 	}
 
-	s.SetLevel(level)
+	l.SetLevel(level)
 }
 
 // Log logs the provided arguments at provided level.
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Log(lvl Level, args ...interface{}) {
-	s.log(lvl.ToZapLevel(), "", args, nil)
+func (l *logger) Log(lvl Level, args ...interface{}) {
+	l.log(lvl.ToZapLevel(), "", args, nil)
 }
 
 // Debug logs the provided arguments at [DebugLevel].
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Debug(args ...interface{}) {
-	s.log(zapcore.DebugLevel, "", args, nil)
+func (l *logger) Debug(args ...interface{}) {
+	l.log(zapcore.DebugLevel, "", args, nil)
 }
 
 // Info logs the provided arguments at [InfoLevel].
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Info(args ...interface{}) {
-	s.log(zapcore.InfoLevel, "", args, nil)
+func (l *logger) Info(args ...interface{}) {
+	l.log(zapcore.InfoLevel, "", args, nil)
 }
 
 // Warn logs the provided arguments at [WarnLevel].
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Warn(args ...interface{}) {
-	s.log(zapcore.WarnLevel, "", args, nil)
+func (l *logger) Warn(args ...interface{}) {
+	l.log(zapcore.WarnLevel, "", args, nil)
 }
 
 // Error logs the provided arguments at [ErrorLevel].
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Error(args ...interface{}) {
-	s.log(zapcore.ErrorLevel, "", args, nil)
+func (l *logger) Error(args ...interface{}) {
+	l.log(zapcore.ErrorLevel, "", args, nil)
 }
 
 // DPanic logs the provided arguments at [DPanicLevel].
 // In development, the logger then panics. (See [DPanicLevel] for details.)
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) DPanic(args ...interface{}) {
-	s.log(zapcore.DPanicLevel, "", args, nil)
+func (l *logger) DPanic(args ...interface{}) {
+	l.log(zapcore.DPanicLevel, "", args, nil)
 }
 
 // Panic constructs a message with the provided arguments and panics.
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Panic(args ...interface{}) {
-	s.log(zapcore.PanicLevel, "", args, nil)
+func (l *logger) Panic(args ...interface{}) {
+	l.log(zapcore.PanicLevel, "", args, nil)
 }
 
 // Fatal constructs a message with the provided arguments and calls os.Exit.
 // Spaces are added between arguments when neither is a string.
-func (s *logger[T]) Fatal(args ...interface{}) {
-	s.log(zapcore.FatalLevel, "", args, nil)
+func (l *logger) Fatal(args ...interface{}) {
+	l.log(zapcore.FatalLevel, "", args, nil)
 }
 
 // Logf formats the message according to the format specifier
 // and logs it at provided level.
-func (s *logger[T]) Logf(lvl Level, template string, args ...interface{}) {
-	s.log(lvl.ToZapLevel(), template, args, nil)
+func (l *logger) Logf(lvl Level, template string, args ...interface{}) {
+	l.log(lvl.ToZapLevel(), template, args, nil)
 }
 
 // Debugf formats the message according to the format specifier
 // and logs it at [DebugLevel].
-func (s *logger[T]) Debugf(template string, args ...interface{}) {
-	s.log(zapcore.DebugLevel, template, args, nil)
+func (l *logger) Debugf(template string, args ...interface{}) {
+	l.log(zapcore.DebugLevel, template, args, nil)
 }
 
 // Infof formats the message according to the format specifier
 // and logs it at [InfoLevel].
-func (s *logger[T]) Infof(template string, args ...interface{}) {
-	s.log(zapcore.InfoLevel, template, args, nil)
+func (l *logger) Infof(template string, args ...interface{}) {
+	l.log(zapcore.InfoLevel, template, args, nil)
 }
 
 // Warnf formats the message according to the format specifier
 // and logs it at [WarnLevel].
-func (s *logger[T]) Warnf(template string, args ...interface{}) {
-	s.log(zapcore.WarnLevel, template, args, nil)
+func (l *logger) Warnf(template string, args ...interface{}) {
+	l.log(zapcore.WarnLevel, template, args, nil)
 }
 
 // Errorf formats the message according to the format specifier
 // and logs it at [ErrorLevel].
-func (s *logger[T]) Errorf(template string, args ...interface{}) {
-	s.log(zapcore.ErrorLevel, template, args, nil)
+func (l *logger) Errorf(template string, args ...interface{}) {
+	l.log(zapcore.ErrorLevel, template, args, nil)
 }
 
 // DPanicf formats the message according to the format specifier
 // and logs it at [DPanicLevel].
 // In development, the logger then panics. (See [DPanicLevel] for details.)
-func (s *logger[T]) DPanicf(template string, args ...interface{}) {
-	s.log(zapcore.DPanicLevel, template, args, nil)
+func (l *logger) DPanicf(template string, args ...interface{}) {
+	l.log(zapcore.DPanicLevel, template, args, nil)
 }
 
 // Panicf formats the message according to the format specifier
 // and panics.
-func (s *logger[T]) Panicf(template string, args ...interface{}) {
-	s.log(zapcore.PanicLevel, template, args, nil)
+func (l *logger) Panicf(template string, args ...interface{}) {
+	l.log(zapcore.PanicLevel, template, args, nil)
 }
 
 // Fatalf formats the message according to the format specifier
 // and calls os.Exit.
-func (s *logger[T]) Fatalf(template string, args ...interface{}) {
-	s.log(zapcore.FatalLevel, template, args, nil)
+func (l *logger) Fatalf(template string, args ...interface{}) {
+	l.log(zapcore.FatalLevel, template, args, nil)
 }
 
 // Logw logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
-func (s *logger[T]) Logw(lvl Level, msg string, keysAndValues ...interface{}) {
-	s.log(lvl.ToZapLevel(), msg, nil, keysAndValues)
+func (l *logger) Logw(lvl Level, msg string, keysAndValues ...interface{}) {
+	l.log(lvl.ToZapLevel(), msg, nil, keysAndValues)
 }
 
 // Debugw logs a message with some additional context. The variadic key-value
@@ -185,124 +189,124 @@ func (s *logger[T]) Logw(lvl Level, msg string, keysAndValues ...interface{}) {
 // When debug-level logging is disabled, this is much faster than
 //
 //	s.With(keysAndValues).Debug(msg)
-func (s *logger[T]) Debugw(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.DebugLevel, msg, nil, keysAndValues)
+func (l *logger) Debugw(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.DebugLevel, msg, nil, keysAndValues)
 }
 
 // Infow logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
-func (s *logger[T]) Infow(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.InfoLevel, msg, nil, keysAndValues)
+func (l *logger) Infow(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.InfoLevel, msg, nil, keysAndValues)
 }
 
 // Warnw logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
-func (s *logger[T]) Warnw(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.WarnLevel, msg, nil, keysAndValues)
+func (l *logger) Warnw(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.WarnLevel, msg, nil, keysAndValues)
 }
 
 // Errorw logs a message with some additional context. The variadic key-value
 // pairs are treated as they are in With.
-func (s *logger[T]) Errorw(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.ErrorLevel, msg, nil, keysAndValues)
+func (l *logger) Errorw(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.ErrorLevel, msg, nil, keysAndValues)
 }
 
 // DPanicw logs a message with some additional context. In development, the
 // logger then panics. (See DPanicLevel for details.) The variadic key-value
 // pairs are treated as they are in With.
-func (s *logger[T]) DPanicw(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.DPanicLevel, msg, nil, keysAndValues)
+func (l *logger) DPanicw(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.DPanicLevel, msg, nil, keysAndValues)
 }
 
 // Panicw logs a message with some additional context, then panics. The
 // variadic key-value pairs are treated as they are in With.
-func (s *logger[T]) Panicw(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.PanicLevel, msg, nil, keysAndValues)
+func (l *logger) Panicw(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.PanicLevel, msg, nil, keysAndValues)
 }
 
 // Fatalw logs a message with some additional context, then calls os.Exit. The
 // variadic key-value pairs are treated as they are in With.
-func (s *logger[T]) Fatalw(msg string, keysAndValues ...interface{}) {
-	s.log(zapcore.FatalLevel, msg, nil, keysAndValues)
+func (l *logger) Fatalw(msg string, keysAndValues ...interface{}) {
+	l.log(zapcore.FatalLevel, msg, nil, keysAndValues)
 }
 
 // Logln logs a message at provided level.
 // Spaces are always added between arguments.
-func (s *logger[T]) Logln(lvl zapcore.Level, args ...interface{}) {
-	s.logln(lvl, args, nil)
+func (l *logger) Logln(lvl zapcore.Level, args ...interface{}) {
+	l.logln(lvl, args, nil)
 }
 
 // Debugln logs a message at [DebugLevel].
 // Spaces are always added between arguments.
-func (s *logger[T]) Debugln(args ...interface{}) {
-	s.logln(zapcore.DebugLevel, args, nil)
+func (l *logger) Debugln(args ...interface{}) {
+	l.logln(zapcore.DebugLevel, args, nil)
 }
 
 // Infoln logs a message at [InfoLevel].
 // Spaces are always added between arguments.
-func (s *logger[T]) Infoln(args ...interface{}) {
-	s.logln(zapcore.InfoLevel, args, nil)
+func (l *logger) Infoln(args ...interface{}) {
+	l.logln(zapcore.InfoLevel, args, nil)
 }
 
 // Warnln logs a message at [WarnLevel].
 // Spaces are always added between arguments.
-func (s *logger[T]) Warnln(args ...interface{}) {
-	s.logln(zapcore.WarnLevel, args, nil)
+func (l *logger) Warnln(args ...interface{}) {
+	l.logln(zapcore.WarnLevel, args, nil)
 }
 
 // Errorln logs a message at [ErrorLevel].
 // Spaces are always added between arguments.
-func (s *logger[T]) Errorln(args ...interface{}) {
-	s.logln(zapcore.ErrorLevel, args, nil)
+func (l *logger) Errorln(args ...interface{}) {
+	l.logln(zapcore.ErrorLevel, args, nil)
 }
 
 // DPanicln logs a message at [DPanicLevel].
 // In development, the logger then panics. (See [DPanicLevel] for details.)
 // Spaces are always added between arguments.
-func (s *logger[T]) DPanicln(args ...interface{}) {
-	s.logln(zapcore.DPanicLevel, args, nil)
+func (l *logger) DPanicln(args ...interface{}) {
+	l.logln(zapcore.DPanicLevel, args, nil)
 }
 
 // Panicln logs a message at [PanicLevel] and panics.
 // Spaces are always added between arguments.
-func (s *logger[T]) Panicln(args ...interface{}) {
-	s.logln(zapcore.PanicLevel, args, nil)
+func (l *logger) Panicln(args ...interface{}) {
+	l.logln(zapcore.PanicLevel, args, nil)
 }
 
 // Fatalln logs a message at [FatalLevel] and calls os.Exit.
 // Spaces are always added between arguments.
-func (s *logger[T]) Fatalln(args ...interface{}) {
-	s.logln(zapcore.FatalLevel, args, nil)
+func (l *logger) Fatalln(args ...interface{}) {
+	l.logln(zapcore.FatalLevel, args, nil)
 }
 
 // Sync flushes any buffered log entries.
-func (s *logger[T]) Sync() error {
-	return s.base.Sync()
+func (l *logger) Sync() error {
+	return l.base.Sync()
 }
 
 // log message with Sprint, Sprintf, or neither.
-func (s *logger[T]) log(lvl zapcore.Level, template string, fmtArgs []interface{}, context []interface{}) {
+func (l *logger) log(lvl zapcore.Level, template string, fmtArgs []interface{}, context []interface{}) {
 	// If logging at this level is completely disabled, skip the overhead of
 	// string formatting.
-	if lvl < zap.DPanicLevel && !s.base.Core().Enabled(lvl) {
+	if lvl < zap.DPanicLevel && !l.base.Core().Enabled(lvl) {
 		return
 	}
 
 	msg := getMessage(template, fmtArgs)
-	if ce := s.base.Check(lvl, msg); ce != nil {
-		ce.Write(s.sweetenFields(context)...)
+	if ce := l.base.Check(lvl, msg); ce != nil {
+		ce.Write(l.sweetenFields(context)...)
 	}
 }
 
 // logln message with Sprintln
-func (s *logger[T]) logln(lvl zapcore.Level, fmtArgs []interface{}, context []interface{}) {
-	if lvl < zap.DPanicLevel && !s.base.Core().Enabled(lvl) {
+func (l *logger) logln(lvl zapcore.Level, fmtArgs []interface{}, context []interface{}) {
+	if lvl < zap.DPanicLevel && !l.base.Core().Enabled(lvl) {
 		return
 	}
 
 	msg := getMessageln(fmtArgs)
-	if ce := s.base.Check(lvl, msg); ce != nil {
-		ce.Write(s.sweetenFields(context)...)
+	if ce := l.base.Check(lvl, msg); ce != nil {
+		ce.Write(l.sweetenFields(context)...)
 	}
 }
 
@@ -330,7 +334,7 @@ func getMessageln(fmtArgs []interface{}) string {
 	return msg[:len(msg)-1]
 }
 
-func (s *logger[T]) sweetenFields(args []interface{}) []zap.Field {
+func (l *logger) sweetenFields(args []interface{}) []zap.Field {
 	if len(args) == 0 {
 		return nil
 	}
@@ -357,7 +361,7 @@ func (s *logger[T]) sweetenFields(args []interface{}) []zap.Field {
 				seenError = true
 				fields = append(fields, zap.Error(err))
 			} else {
-				s.base.Error(_multipleErrMsg, zap.Error(err))
+				l.base.Error(_multipleErrMsg, zap.Error(err))
 			}
 			i++
 			continue
@@ -365,7 +369,7 @@ func (s *logger[T]) sweetenFields(args []interface{}) []zap.Field {
 
 		// Make sure this element isn't a dangling key.
 		if i == len(args)-1 {
-			s.base.Error(_oddNumberErrMsg, zap.Any("ignored", args[i]))
+			l.base.Error(_oddNumberErrMsg, zap.Any("ignored", args[i]))
 			break
 		}
 
@@ -386,7 +390,7 @@ func (s *logger[T]) sweetenFields(args []interface{}) []zap.Field {
 
 	// If we encountered any invalid key-value pairs, log an error.
 	if len(invalid) > 0 {
-		s.base.Error(_nonStringKeyErrMsg, zap.Array("invalid", invalid))
+		l.base.Error(_nonStringKeyErrMsg, zap.Array("invalid", invalid))
 	}
 	return fields
 }
