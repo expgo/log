@@ -7,6 +7,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"gopkg.in/natefinch/lumberjack.v2"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -24,6 +25,7 @@ type logger struct {
 	originLevel Level
 	tempTimer   *time.Timer
 	timerLock   sync.Mutex
+	writer      zapcore.WriteSyncer
 
 	typePath string
 	cfgPath  string
@@ -72,6 +74,7 @@ func (l *logger) init() {
 		}
 
 		cores := []zapcore.Core{}
+		writers := []zapcore.WriteSyncer{}
 
 		if cfg.Console.Stream != ConsoleNo {
 
@@ -93,6 +96,8 @@ func (l *logger) init() {
 
 			consoleCore := zapcore.NewCore(consoleEncoder, consoleWriter, &l.level)
 			cores = append(cores, consoleCore)
+
+			writers = append(writers, consoleWriter)
 		}
 
 		if len(cfg.File.Filename) > 0 {
@@ -114,9 +119,11 @@ func (l *logger) init() {
 
 			fileCore := zapcore.NewCore(fileEncoder, fileWriter, &l.level)
 			cores = append(cores, fileCore)
+			writers = append(writers, fileWriter)
 		}
 
 		l.base = zap.New(zapcore.NewTee(cores...))
+		l.writer = zapcore.NewMultiWriteSyncer(writers...)
 
 		name := cfg.GetName(l.typePath)
 		if len(name) > 0 {
@@ -129,6 +136,12 @@ func (l *logger) init() {
 
 		l.base = l.base.WithOptions(options...)
 	})
+}
+
+func (l *logger) Writer() io.Writer {
+	l.init()
+
+	return l.writer
 }
 
 // Level reports the minimum enabled level for this logger.
