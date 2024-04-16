@@ -6,14 +6,14 @@ import "github.com/expgo/log"
 //go:generate ag --dev-plugin=github.com/expgo/log/annotation
 
 type MyLog struct {
-	log log.Logger `new:""`
+	log.InnerLog
 }
 
 func (ml *MyLog) WriteLog() {
-	ml.log.Debug("debug")
-	ml.log.Info("info")
-	ml.log.Warn("warn")
-	ml.log.Error("error")
+	ml.L.Debug("debug")
+	ml.L.Info("info")
+	ml.L.Warn("warn")
+	ml.L.Error("error")
 }
 
 type MyLog1 struct {

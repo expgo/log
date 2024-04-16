@@ -14,7 +14,7 @@ func TestLogWithWire(t *testing.T) {
 
 	myLog := factory.New[MyLog]()
 	msgs := []string{}
-	myLog.log.AddHook(func(level log.Level, t time.Time, name string, msg string) {
+	myLog.L.AddHook(func(level log.Level, t time.Time, name string, msg string) {
 		msgs = append(msgs, msg)
 	})
 

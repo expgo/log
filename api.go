@@ -19,8 +19,8 @@ func Must(log Logger, err error) Logger {
 	return log
 }
 
-// L inner log struct
-type L struct {
+// InnerLog inner log struct
+type InnerLog struct {
 	L Logger `new:""`
 }
 
