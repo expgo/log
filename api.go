@@ -19,6 +19,11 @@ func Must(log Logger, err error) Logger {
 	return log
 }
 
+// L inner log struct
+type L struct {
+	L Logger `new:""`
+}
+
 type Logger interface {
 	Level() Level
 	SetLevel(lvl Level)
