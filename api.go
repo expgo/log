@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-var logs generic.Cache[string, any]
+var logs generic.Cache[string, Logger]
 
 const DefaultConfigPath = "logging"
 
@@ -25,6 +25,7 @@ type Logger interface {
 	TemporarySetLevel(lvl Level, d time.Duration)
 	AddHook(func(level Level, t time.Time, name string, msg string))
 	Writer() io.Writer
+	Sync() error
 
 	Log(lvl Level, args ...any)
 	Debug(args ...any)
@@ -93,11 +94,12 @@ func FactoryWithTypePathAndConfigPath(typePath string, cfgPath string) Logger {
 }
 
 func NewWithTypePathAndConfigPath(typePath string, cfgPath string) (Logger, error) {
-	log, err := logs.GetOrLoad(typePath, func(k string) (any, error) {
+	log, err := logs.GetOrLoad(typePath, func(k string) (Logger, error) {
 		l := &logger{
 			typePath: typePath,
 			cfgPath:  cfgPath,
 		}
+
 		return l, nil
 	})
 
@@ -105,15 +107,16 @@ func NewWithTypePathAndConfigPath(typePath string, cfgPath string) (Logger, erro
 		return nil, err
 	}
 
-	return log.(Logger), nil
+	return log, nil
 }
 
 func NewWithTypePathAndConfig(typePath string, cfg *Config) (Logger, error) {
-	log, err := logs.GetOrLoad(typePath, func(k string) (any, error) {
+	log, err := logs.GetOrLoad(typePath, func(k string) (Logger, error) {
 		l := &logger{
 			typePath: typePath,
 			cfg:      cfg,
 		}
+
 		return l, nil
 	})
 
@@ -121,7 +124,7 @@ func NewWithTypePathAndConfig(typePath string, cfg *Config) (Logger, error) {
 		return nil, err
 	}
 
-	return log.(Logger), nil
+	return log, nil
 }
 
 func SetLevel(logPathGlob string, level Level) {
@@ -142,4 +145,16 @@ func TemporarySetLevel(logPath string, level Level, d time.Duration) {
 			}
 		}
 	}
+}
+
+func Sync() error {
+	for _, key := range logs.Keys() {
+		if l, ok := logs.Get(key); ok {
+			if err := l.Sync(); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
