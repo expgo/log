@@ -58,7 +58,7 @@ const (
 )
 
 func init() {
-	factory.Factory[Logger](FactoryWithConfigPath).Params("self", "value:logging").CheckValid()
+	factory.Factory[Logger](NewWithConfigPath).Params("self", "value:logging").CheckValid()
 }
 
 var ErrInvalidConsole = errors.New("not a valid Console")

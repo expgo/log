@@ -9,5 +9,5 @@ import (
 )
 
 var (
-	logger = log.FactoryWithTypePathAndConfigPath("github.com/expgo/log/example", "logging")
+	logger = log.NewWithTypePathAndConfigPath("github.com/expgo/log/example", "logging")
 )

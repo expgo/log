@@ -23,11 +23,15 @@ func (m *MyLog) RunLog() {
 }
 
 func TestLog(t *testing.T) {
+	logs = map[string]Logger{}
+
 	log := Log[MyLogStruct]()
 	log.Info("hello")
 }
 
 func TestLevel(t *testing.T) {
+	logs = map[string]Logger{}
+
 	cfg, _ := config.New[Config]("")
 	cfg.Level["*Struct"] = LevelDebug
 	cfg.File.Filename = "log/app.log"
@@ -60,6 +64,8 @@ func TestLevel(t *testing.T) {
 }
 
 func TestLogRoll(t *testing.T) {
+	logs = map[string]Logger{}
+
 	cfg, _ := config.New[Config]("")
 	cfg.Level["*Struct"] = LevelDebug
 	cfg.File.Filename = "log/roll.log"
@@ -74,6 +80,8 @@ func TestLogRoll(t *testing.T) {
 }
 
 func TestChangeLevel(t *testing.T) {
+	logs = map[string]Logger{}
+
 	log := Log[MyLogStruct]()
 
 	msgs := []string{}
@@ -108,6 +116,8 @@ func TestChangeLevel(t *testing.T) {
 }
 
 func TestLogWire(t *testing.T) {
+	logs = map[string]Logger{}
+
 	myLog := factory.New[MyLog]()
 	msgs := []string{}
 	myLog.log.AddHook(func(level Level, t time.Time, name string, msg string) {

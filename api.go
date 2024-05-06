@@ -1,23 +1,18 @@
 package log
 
 import (
-	"github.com/expgo/generic"
+	"github.com/expgo/structure"
+	"github.com/expgo/sync"
 	"github.com/gobwas/glob"
 	"io"
 	"reflect"
 	"time"
 )
 
-var logs generic.Cache[string, Logger]
+var logs = map[string]Logger{}
+var logsLock = sync.NewRWMutex()
 
 const DefaultConfigPath = "logging"
-
-func Must(log Logger, err error) Logger {
-	if err != nil {
-		panic(err)
-	}
-	return log
-}
 
 // InnerLog inner log struct
 type InnerLog struct {
@@ -58,78 +53,62 @@ type Logger interface {
 }
 
 func Log[T any]() Logger {
-	return LogWithConfigPath[T](DefaultConfigPath)
+	return getOrNewLog(new(T), DefaultConfigPath, nil)
 }
 
 func LogWithConfigPath[T any](cfgPath string) Logger {
-	return Must(NewWithConfigPath(new(T), cfgPath))
+	return getOrNewLog(new(T), cfgPath, nil)
 }
 
 func LogWithConfig[T any](cfg *Config) Logger {
-	vt := reflect.TypeOf((*T)(nil))
-	if vt.Kind() == reflect.Ptr {
-		vt = vt.Elem()
-	}
-	typePath := vt.PkgPath() + "." + vt.Name()
-
-	return Must(NewWithTypePathAndConfig(typePath, cfg))
+	return getOrNewLog(new(T), "", cfg)
 }
 
-func New(t any) (Logger, error) {
-	return NewWithConfigPath(t, DefaultConfigPath)
+func New(t any) Logger {
+	return getOrNewLog(t, DefaultConfigPath, nil)
 }
 
-func NewWithConfigPath(t any, cfgPath string) (Logger, error) {
+// @Factory(params={self, "value:logging"})
+func NewWithConfigPath(t any, cfgPath string) Logger {
+	return getOrNewLog(t, cfgPath, nil)
+}
+
+func NewWithTypePathAndConfigPath(typePath string, cfgPath string) Logger {
+	return getOrNewLogByPath(typePath, cfgPath, nil)
+}
+
+func NewWithTypePathAndConfig(typePath string, cfg *Config) Logger {
+	return getOrNewLogByPath(typePath, "", cfg)
+}
+
+func getOrNewLog(t any, cfgPath string, cfg *Config) Logger {
 	vt := reflect.TypeOf(t)
 	if vt.Kind() == reflect.Ptr {
 		vt = vt.Elem()
 	}
 	typePath := vt.PkgPath() + "." + vt.Name()
 
-	return NewWithTypePathAndConfigPath(typePath, cfgPath)
+	return getOrNewLogByPath(typePath, cfgPath, cfg)
 }
 
-// @Factory(params={self, "value:logging"})
-func FactoryWithConfigPath(t any, cfgPath string) Logger {
-	return Must(NewWithConfigPath(t, cfgPath))
-}
+func getOrNewLogByPath(typePath string, cfgPath string, cfg *Config) Logger {
+	logsLock.RLock()
+	log, ok := logs[typePath]
+	logsLock.RUnlock()
 
-func FactoryWithTypePathAndConfigPath(typePath string, cfgPath string) Logger {
-	return Must(NewWithTypePathAndConfigPath(typePath, cfgPath))
-}
-
-func NewWithTypePathAndConfigPath(typePath string, cfgPath string) (Logger, error) {
-	log, err := logs.GetOrLoad(typePath, func(k string) (Logger, error) {
-		l := &logger{
+	if !ok {
+		log = &logger{
 			typePath: typePath,
 			cfgPath:  cfgPath,
-		}
-
-		return l, nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	return log, nil
-}
-
-func NewWithTypePathAndConfig(typePath string, cfg *Config) (Logger, error) {
-	log, err := logs.GetOrLoad(typePath, func(k string) (Logger, error) {
-		l := &logger{
-			typePath: typePath,
 			cfg:      cfg,
 		}
 
-		return l, nil
-	})
-
-	if err != nil {
-		return nil, err
+		logsLock.Lock()
+		logs[typePath] = log
+		logsLock.Unlock()
 	}
 
-	return log, nil
+	return log
 }
 
 func SetLevel(logPathGlob string, level Level) {
@@ -138,26 +117,26 @@ func SetLevel(logPathGlob string, level Level) {
 
 func TemporarySetLevel(logPath string, level Level, d time.Duration) {
 	logPathGlob := glob.MustCompile(logPath)
-	keys := logs.Keys()
 
-	for _, key := range keys {
+	logsLock.RLock()
+	_logs := structure.CloneMap(logs)
+	logsLock.RUnlock()
+
+	for key, log := range _logs {
 		if logPathGlob.Match(key) {
-			l, loaded := logs.Get(key)
-			if loaded {
-				if log, ok := l.(ITemporarySetLevel); ok {
-					log.TemporarySetLevel(level, d)
-				}
-			}
+			log.TemporarySetLevel(level, d)
 		}
 	}
 }
 
 func Sync() error {
-	for _, key := range logs.Keys() {
-		if l, ok := logs.Get(key); ok {
-			if err := l.Sync(); err != nil {
-				return err
-			}
+	logsLock.RLock()
+	_logs := structure.CloneMap(logs)
+	logsLock.RUnlock()
+
+	for _, log := range _logs {
+		if err := log.Sync(); err != nil {
+			return err
 		}
 	}
 

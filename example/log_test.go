@@ -10,7 +10,7 @@ import (
 )
 
 func TestLogWithWire(t *testing.T) {
-	config.SetDefaultFilename("log.yml")
+	config.DefaultFile("log.yml")
 
 	myLog := factory.New[MyLog]()
 	msgs := []string{}
@@ -41,7 +41,7 @@ func TestLogWithWire(t *testing.T) {
 }
 
 func TestLog1(t *testing.T) {
-	config.SetDefaultFilename("log.yml")
+	config.DefaultFile("log.yml")
 
 	myLog1 := factory.New[MyLog1]()
 	msgs := []string{}
@@ -56,6 +56,8 @@ func TestLog1(t *testing.T) {
 }
 
 func TestLogger(t *testing.T) {
+	config.DefaultFile("log.yml")
+
 	msgs := []string{}
 	logger.AddHook(func(level log.Level, t time.Time, name string, msg string) {
 		msgs = append(msgs, msg)

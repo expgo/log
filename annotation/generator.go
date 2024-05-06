@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/expgo/ag/api"
-	"github.com/expgo/generic/stream"
 	"io"
+	"sort"
 	"strings"
 )
 
@@ -23,7 +23,7 @@ func (g *Generator) WriteConst(wr io.Writer) error {
 	buf.WriteString("var (\n")
 
 	for _, l := range g.logs {
-		buf.WriteString(fmt.Sprintf(`%s = log.FactoryWithTypePathAndConfigPath("%s", "%s")`, l.Name, l.typePath, l.CfgPath) + "\n")
+		buf.WriteString(fmt.Sprintf(`%s = log.NewWithTypePathAndConfigPath("%s", "%s")`, l.Name, l.typePath, l.CfgPath) + "\n")
 	}
 
 	buf.WriteString(")\n")
@@ -41,6 +41,10 @@ func (g *Generator) WriteBody(wr io.Writer) error {
 }
 
 func newGenerator(logs []*Log) (api.Generator, error) {
-	sorted := stream.Must(stream.Of(logs).Sort(func(x, y *Log) int { return strings.Compare(x.Name, y.Name) }).ToSlice())
+	sorted := append([]*Log(nil), logs...)
+	sort.Slice(sorted, func(i, j int) bool {
+		return strings.Compare(sorted[i].Name, sorted[j].Name) < 0
+	})
+
 	return &Generator{sorted}, nil
 }
