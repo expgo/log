@@ -1,6 +1,7 @@
 package log
 
 import (
+	"github.com/expgo/config"
 	"github.com/expgo/structure"
 	"github.com/expgo/sync"
 	"github.com/gobwas/glob"
@@ -109,6 +110,14 @@ func getOrNewLogByPath(typePath string, cfgPath string, cfg *Config) Logger {
 	}
 
 	return log
+}
+
+func SetDefaultLogFile(filename string) error {
+	fileMap := map[string]any{}
+	filenameMap := map[string]any{}
+	filenameMap["filename"] = filename
+	fileMap["file"] = filenameMap
+	return config.SetConfig(fileMap, DefaultConfigPath)
 }
 
 func SetLevel(logPathGlob string, level Level) {
