@@ -3,10 +3,10 @@ module github.com/expgo/log
 go 1.20
 
 require (
-	github.com/expgo/ag v0.0.0-20240412034540-693d298d12d2
-	github.com/expgo/config v0.0.0-20240506153559-77840e07f682
-	github.com/expgo/factory v0.0.0-20240506101817-8a6fa2281886
-	github.com/expgo/structure v0.0.0-20240430162200-172eb0aa3964
+	github.com/expgo/ag v0.0.0-20240507032547-4b7e9b00453b
+	github.com/expgo/config v0.0.0-20240515023223-bf4f86c6d09b
+	github.com/expgo/factory v0.0.0-20240515020554-e4aa38f391db
+	github.com/expgo/structure v0.0.0-20240515010801-898cf0e94ad3
 	github.com/expgo/sync v0.0.0-20240416034417-7c4de7477076
 	github.com/gobwas/glob v0.2.3
 	github.com/stretchr/testify v1.9.0
@@ -17,7 +17,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/expr-lang/expr v1.16.5 // indirect
+	github.com/expr-lang/expr v1.16.7 // indirect
 	github.com/petermattis/goid v0.0.0-20240503122002-4b96552b8156 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/sasha-s/go-deadlock v0.3.1 // indirect

@@ -3,6 +3,7 @@ package log
 import (
 	"fmt"
 	"github.com/expgo/config"
+	"github.com/expgo/factory"
 	"go.uber.org/multierr"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -48,8 +49,8 @@ func (l *logger) init() {
 				panic("cfgPath or cfg must set one")
 			}
 
-			cfg, err := config.New[Config](l.cfgPath)
-			if err != nil {
+			cfg := factory.New[Config]()
+			if err := config.GetConfig(cfg, l.cfgPath); err != nil {
 				panic(err)
 			}
 

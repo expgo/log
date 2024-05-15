@@ -32,7 +32,8 @@ func TestLog(t *testing.T) {
 func TestLevel(t *testing.T) {
 	logs = map[string]Logger{}
 
-	cfg, _ := config.New[Config]("")
+	cfg := factory.New[Config]()
+	_ = config.GetConfig(cfg)
 	cfg.Level["*Struct"] = LevelDebug
 	cfg.File.Filename = "log/app.log"
 
@@ -66,7 +67,8 @@ func TestLevel(t *testing.T) {
 func TestLogRoll(t *testing.T) {
 	logs = map[string]Logger{}
 
-	cfg, _ := config.New[Config]("")
+	cfg := factory.New[Config]()
+	_ = config.GetConfig(cfg)
 	cfg.Level["*Struct"] = LevelDebug
 	cfg.File.Filename = "log/roll.log"
 	cfg.File.MaxSize = 1
