@@ -4,6 +4,8 @@ github.com/expgo/ag v0.0.0-20240507032547-4b7e9b00453b h1:BmpD9kdbD3PXFek56TGblh
 github.com/expgo/ag v0.0.0-20240507032547-4b7e9b00453b/go.mod h1:k5D7NPJMbWZLV5i7tZ9hc9429gEXqQxpdAI6T2euiBM=
 github.com/expgo/config v0.0.0-20240515023223-bf4f86c6d09b h1:lU7aKnnqAIvJqBX10XlB7Y24n2UlKfQTjPKV8wwWttY=
 github.com/expgo/config v0.0.0-20240515023223-bf4f86c6d09b/go.mod h1:sZl48aOcGn+SrrqrqnVB0P5TaBKBi8hHxqSDR2f0g50=
+github.com/expgo/config v0.0.0-20240515025641-6793b5649b25 h1:hfC7C8jF/aRmm0YMjhLgXp+xwqIbyergmQdOux7b32Q=
+github.com/expgo/config v0.0.0-20240515025641-6793b5649b25/go.mod h1:sZl48aOcGn+SrrqrqnVB0P5TaBKBi8hHxqSDR2f0g50=
 github.com/expgo/factory v0.0.0-20240515020554-e4aa38f391db h1:qtG1FdKMUdXNc2Z9T0PUab4lcn/hPn2k4ZMjVE/QWl0=
 github.com/expgo/factory v0.0.0-20240515020554-e4aa38f391db/go.mod h1:H8Vbyr5C9V9Z12TXlpo7nfvYMW4DcaFNcJV34nsU9SE=
 github.com/expgo/structure v0.0.0-20240515010801-898cf0e94ad3 h1:zDRvZjuqnMHH4daSbC/vO7ESOg6FhCgS2BMWH1cZs6c=
