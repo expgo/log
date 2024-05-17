@@ -113,11 +113,7 @@ func getOrNewLogByPath(typePath string, cfgPath string, cfg *Config) Logger {
 }
 
 func SetDefaultLogFile(filename string) error {
-	fileMap := map[string]any{}
-	filenameMap := map[string]any{}
-	filenameMap["filename"] = filename
-	fileMap["file"] = filenameMap
-	return config.SetConfig(fileMap, DefaultConfigPath)
+	return config.SetValue(filename, DefaultConfigPath, "file", "filename")
 }
 
 func SetLevel(logPathGlob string, level Level) {
