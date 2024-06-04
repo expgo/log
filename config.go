@@ -91,7 +91,7 @@ type FileLog struct {
 	Compress bool `json:"compress" yaml:"compress"  value:"true"`
 	// contains filtered or unexported fields
 
-	Encoder Encoder `json:"encoder" yaml:"encoder" value:"json"`
+	Encoder Encoder `json:"encoder" yaml:"encoder" value:"text"`
 }
 
 type ConsoleLog struct {
