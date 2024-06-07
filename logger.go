@@ -159,6 +159,8 @@ func (l *logger) Level() Level {
 
 // SetLevel set the log's level
 func (l *logger) SetLevel(level Level) {
+	l.init()
+
 	l.level.SetLevel(level.ToZapLevel())
 }
 
