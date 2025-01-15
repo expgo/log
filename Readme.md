@@ -4,6 +4,7 @@ Build a logging system that can be controlled by a config file.
 
 ## config file
 
+```yaml
 logging:                 # default logging config name
   level:
     "*": debug           # all loggers will be set to debug level
@@ -21,6 +22,7 @@ logging:                 # default logging config name
     encoder: text        # log file encoder, will be `text` or `json`, default is `text`.
   withcaller: true       # configures the Logger to annotate each message with the filename, line number, and function name of caller. Default is true.
   withlogname: short     # If log the file type name. will be `short`, `full` or `none`. Default is `short`. `short` means the file name without the directory path. `full` means the file name with the directory path. `none` means no file name.
+```
 
 ## how to use custom level name
 - If no config file, there will be a default `"*": info` under the `level` section.
