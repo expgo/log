@@ -1,9 +1,10 @@
 package log
 
 import (
+	"path/filepath"
+
 	"github.com/gobwas/glob"
 	"go.uber.org/zap/zapcore"
-	"path/filepath"
 )
 
 /*
@@ -103,8 +104,8 @@ type Config struct {
 	Level       map[string]Level
 	Console     ConsoleLog
 	File        FileLog
-	WithCaller  bool `value:"true"`
-	WithLogName Name `value:"short"`
+	WithCaller  bool `json:"withcaller" yaml:"withcaller" value:"true"`
+	WithLogName Name `json:"withlogname" yaml:"withlogname" value:"short"`
 }
 
 func (c *Config) Init() {
