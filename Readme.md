@@ -5,7 +5,7 @@ Build a logging system that can be controlled by a config file.
 ## config file
 
 ```yaml
-logging:                 # default logging config name
+logging:                 # default logging section name
   level:
     "*": debug           # all loggers will be set to debug level
     "*MyLog": warn       # only MyLog will be set to warn level
@@ -22,6 +22,15 @@ logging:                 # default logging config name
     encoder: text        # log file encoder, will be `text` or `json`, default is `text`.
   withcaller: true       # configures the Logger to annotate each message with the filename, line number, and function name of caller. Default is true.
   withlogname: short     # If log the file type name. will be `short`, `full` or `none`. Default is `short`. `short` means the file name without the directory path. `full` means the file name with the directory path. `none` means no file name.
+
+log1:                    # custom logging section name       
+  level:
+    "*MyLog1": debug
+  console:
+    stream: stdout
+    encoder: json
+  file:
+    filename: log/b.log
 ```
 
 ## how to use custom level name
@@ -37,3 +46,20 @@ logging:                 # default logging config name
 - panic
 - fatal
 - invalid
+
+## use custom logging section name
+
+If use ag factory to autowire create the logging instance, you can use the `value` attribute to specify the custom logging section name.
+
+```go
+type MyLog1 struct {
+	log log.Logger `new:"self,value:log1"`
+}
+
+func (ml *MyLog1) WriteLog() {
+	ml.log.Debug("debug 1")
+	ml.log.Info("info 2")
+	ml.log.Warn("warn 3")
+	ml.log.Error("error 4")
+}
+```
